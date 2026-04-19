@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# Data & Models
+# Un-comment the line below if your dataset is too large (>100MB)
+# *.csv
+
+# Streamlit
+.streamlit/
+
+# IDEs
+.vscode/
+.idea/
+.ipynb_checkpoints/
