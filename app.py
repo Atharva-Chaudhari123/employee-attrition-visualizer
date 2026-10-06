@@ -654,59 +654,54 @@ elif page == "🔮 Flight-Risk Predictor & Simulator":
 
     if model is None:
         st.error("⚠️ Model files not found in `models/` directory! Please train the model first.")
-    else:
-        col_in1, col_in2 = st.columns([1, 1])
+        col_controls, col_live = st.columns([1.1, 1.2])
 
-        with col_in1:
-            st.markdown("### 📊 Performance & Workload")
-            avg_monthly_hrs = st.slider("Average Monthly Hours", 120, 320, 255)
-            last_evaluation = st.slider("Last Evaluation Score", 0.0, 1.0, 0.88, step=0.01)
-            satisfaction = st.slider("Satisfaction Score", 0.0, 1.0, 0.28, step=0.01)
-            n_projects = st.select_slider("Assigned Projects", options=[1, 2, 3, 4, 5, 6, 7], value=6)
-            tenure = st.slider("Tenure at Company (Years)", 1, 10, 4)
-            age = st.slider("Age", 18, 65, 31)
+        with col_controls:
+            st.subheader("⚙️ Configure Employee Profile")
+            tab_perf, tab_demo = st.tabs(["📊 Performance & Workload", "👤 Profile & Demographics"])
 
-        with col_in2:
-            st.markdown("### 👤 Employee Demographics")
-            salary = st.selectbox("Salary Band", ["low", "medium", "high"], index=0)
-            gender = st.radio("Gender", ["Male", "Female"], horizontal=True)
-            marital_status = st.radio("Marital Status", ["Married", "Unmarried"], horizontal=True)
-            filed_complaint = st.radio("Filed Grievance/Complaint?", ["No", "Yes"], horizontal=True)
-            recently_promoted = st.radio("Promoted in Last 2 Years?", ["No", "Yes"], horizontal=True)
+            with tab_perf:
+                avg_monthly_hrs = st.slider("Average Monthly Hours", 120, 320, 255)
+                last_evaluation = st.slider("Last Evaluation Score", 0.0, 1.0, 0.88, step=0.01)
+                satisfaction = st.slider("Satisfaction Score", 0.0, 1.0, 0.28, step=0.01)
+                n_projects = st.select_slider("Assigned Projects", options=[1, 2, 3, 4, 5, 6, 7], value=6)
+                tenure = st.slider("Tenure at Company (Years)", 1, 10, 4)
+                age = st.slider("Age", 18, 65, 31)
 
-        salary_map = {"high": 0, "low": 1, "medium": 2}
-        gender_map = {"Female": 0, "Male": 1}
-        marital_map = {"Married": 0, "Unmarried": 1}
-        yes_no_map = {"No": 0, "Yes": 1}
+            with tab_demo:
+                salary = st.selectbox("Salary Band", ["low", "medium", "high"], index=0)
+                gender = st.radio("Gender", ["Male", "Female"], horizontal=True)
+                marital_status = st.radio("Marital Status", ["Married", "Unmarried"], horizontal=True)
+                filed_complaint = st.radio("Filed Grievance/Complaint?", ["No", "Yes"], horizontal=True)
+                recently_promoted = st.radio("Promoted in Last 2 Years?", ["No", "Yes"], horizontal=True)
 
-        # Build feature vector
-        input_data = pd.DataFrame([{
-            'avg_monthly_hrs': avg_monthly_hrs,
-            'filed_complaint': yes_no_map[filed_complaint],
-            'last_evaluation': last_evaluation,
-            'n_projects': n_projects,
-            'recently_promoted': yes_no_map[recently_promoted],
-            'salary': salary_map[salary],
-            'satisfaction': satisfaction,
-            'tenure': tenure,
-            'age': age,
-            'gender': gender_map[gender],
-            'marital_status': marital_map[marital_status]
-        }])[feature_names]
+            salary_map = {"high": 0, "low": 1, "medium": 2}
+            gender_map = {"Female": 0, "Male": 1}
+            marital_map = {"Married": 0, "Unmarried": 1}
+            yes_no_map = {"No": 0, "Yes": 1}
 
-        input_scaled = scaler.transform(input_data)
-        base_prob = model.predict_proba(input_scaled)[0][1]
-        base_pred = model.predict(input_scaled)[0]
+            # Build feature vector
+            input_data = pd.DataFrame([{
+                'avg_monthly_hrs': avg_monthly_hrs,
+                'filed_complaint': yes_no_map[filed_complaint],
+                'last_evaluation': last_evaluation,
+                'n_projects': n_projects,
+                'recently_promoted': yes_no_map[recently_promoted],
+                'salary': salary_map[salary],
+                'satisfaction': satisfaction,
+                'tenure': tenure,
+                'age': age,
+                'gender': gender_map[gender],
+                'marital_status': marital_map[marital_status]
+            }])[feature_names]
 
-        st.markdown("---")
-        
-        # Real-time Prediction Output
-        res_col1, res_col2 = st.columns([1, 1.2])
+            input_scaled = scaler.transform(input_data)
+            base_prob = model.predict_proba(input_scaled)[0][1]
+            base_pred = model.predict(input_scaled)[0]
 
-        with res_col1:
-            st.subheader("🎯 Attrition Risk Gauge")
+        with col_live:
+            st.subheader("🎯 Live Flight-Risk Assessment")
             
-            # Gauge color
             gauge_color = "#22c55e" if base_prob < 0.4 else ("#f59e0b" if base_prob < 0.7 else "#ef4444")
 
             fig_gauge = go.Figure(go.Indicator(
@@ -733,25 +728,24 @@ elif page == "🔮 Flight-Risk Predictor & Simulator":
                     }
                 }
             ))
-            fig_gauge.update_layout(height=340, margin=dict(l=20, r=20, t=30, b=20))
+            fig_gauge.update_layout(height=280, margin=dict(l=20, r=20, t=25, b=10))
             st.plotly_chart(fig_gauge, use_container_width=True)
 
             if base_prob > 0.7:
-                st.error("⚠️ **CRITICAL FLIGHT RISK:** High probability of imminent resignation. Immediate retention intervention advised.")
+                st.error(f"⚠️ **CRITICAL FLIGHT RISK ({base_prob*100:.1f}%):** High probability of imminent resignation. Immediate retention intervention advised.")
             elif base_prob > 0.4:
-                st.warning("🟡 **MODERATE RISK:** Early disengagement signs detected. Schedule manager 1-on-1.")
+                st.warning(f"🟡 **MODERATE RISK ({base_prob*100:.1f}%):** Early disengagement signs detected. Schedule manager 1-on-1.")
             else:
-                st.success("✅ **STABLE RETENTION:** Low flight risk. Employee is engaged and sustainably loaded.")
+                st.success(f"✅ **STABLE RETENTION ({base_prob*100:.1f}%):** Low flight risk. Employee is engaged and sustainably loaded.")
 
-        with res_col2:
-            st.subheader("💡 Key Risk Factors Visualizer")
-            st.caption("How this profile deviates from company benchmark stayer norms:")
-            
+            # Key Risk Factors Visualizer
+            st.markdown("##### 💡 Primary Risk Pressures:")
             factors = [
                 ('Low Job Satisfaction', (0.65 - satisfaction) * 1.5 if satisfaction < 0.65 else 0),
                 ('Overtime Work Hours', (avg_monthly_hrs - 180) / 100 if avg_monthly_hrs > 180 else 0),
                 ('High Project Overload', (n_projects - 4) * 0.25 if n_projects > 4 else 0),
                 ('Low Compensation Band', 0.25 if salary == 'low' else (0.1 if salary == 'medium' else -0.1)),
+                ('Complaint / Unresolved Friction', 0.20 if filed_complaint == 'Yes' else 0),
                 ('Long Tenure Burnout Risk', 0.2 if tenure >= 4 else 0)
             ]
             factors_df = pd.DataFrame(factors, columns=['Factor', 'Impact']).sort_values('Impact', ascending=True)
@@ -764,16 +758,16 @@ elif page == "🔮 Flight-Risk Predictor & Simulator":
                 orientation='h',
                 color='Color',
                 color_discrete_map={'#ef4444': '#ef4444', '#22c55e': '#22c55e'},
-                height=340
+                height=240
             )
             fig_factors.update_layout(
                 showlegend=False,
-                margin=dict(l=10, r=10, t=30, b=20),
-                xaxis=dict(title="Relative Risk Pressure")
+                margin=dict(l=10, r=10, t=10, b=10),
+                xaxis=dict(title="Relative Pressure")
             )
             st.plotly_chart(fig_factors, use_container_width=True)
 
-        # --- Interactive "What-If" Retention Simulator ---
+    # --- Interactive "What-If" Retention Simulator ---
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown("### 🎛️ Interactive 'What-If' Retention Countermeasure Simulator")
         st.info("Simulate human resource interventions to see how changes in workload or compensation reduce the employee's flight risk.")
