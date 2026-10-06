@@ -654,6 +654,7 @@ elif page == "🔮 Flight-Risk Predictor & Simulator":
 
     if model is None:
         st.error("⚠️ Model files not found in `models/` directory! Please train the model first.")
+    else:
         col_controls, col_live = st.columns([1.1, 1.2])
 
         with col_controls:
